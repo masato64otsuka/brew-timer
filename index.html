@@ -4,29 +4,31 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#ffffff" />
-  <title>抽出タイマー</title>
+  <title>抽出タイマー（レシピ複数）</title>
   <style>
     body{font-family:-apple-system,system-ui; margin:18px; line-height:1.45;}
     h1{font-size:22px; margin:0 0 10px;}
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
     .card{border:1px solid #ddd; border-radius:12px; padding:12px; margin:12px 0;}
-    .time{font-size:44px; font-weight:700; letter-spacing:1px;}
-    button,input{font-size:16px; padding:10px 12px;}
+    .time{font-size:44px; font-weight:800; letter-spacing:1px;}
+    button,input,select{font-size:16px; padding:10px 12px;}
     button{border-radius:10px; border:1px solid #bbb; background:#fff;}
     button.primary{border-color:#333;}
     input[type="text"]{min-width:160px;}
     input[type="number"]{width:120px;}
+    select{min-width:220px;}
     table{width:100%; border-collapse:collapse; margin-top:10px;}
-    th,td{border-bottom:1px solid #eee; padding:8px 6px; text-align:left;}
+    th,td{border-bottom:1px solid #eee; padding:8px 6px; text-align:left; vertical-align:top;}
     tr.next{background:#e9f7ff;}
     tr.hit{background:#fff1f1;}
     .muted{color:#666; font-size:13px;}
     .pill{display:inline-block; padding:3px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px;}
+    .danger{border-color:#c00; color:#c00;}
   </style>
 </head>
 <body>
-  <h1>抽出タイマー</h1>
-  <div class="muted">抽出レシピ（注湯イベント）に沿って進行し、時刻到達で合図します。</div>
+  <h1>抽出タイマー（レシピ複数保存）</h1>
+  <div class="muted">レシピ（豆/器具/比率）ごとにイベントを保存して切り替えできます。</div>
 
   <div class="card">
     <div class="time" id="clock">00:00.0</div>
@@ -43,15 +45,22 @@
 
   <div class="card">
     <div class="row">
-      <input id="label" type="text" placeholder="イベント名（例：蒸らし開始）" />
-      <input id="mm" type="number" min="0" placeholder="分" />
-      <input id="ss" type="number" min="0" max="59" placeholder="秒" />
-      <button id="add">追加</button>
-      <button id="clear">全削除</button>
+      <select id="recipeSelect"></select>
+      <button id="newRecipe">新規レシピ</button>
+      <button id="renameRecipe">名前変更</button>
+      <button class="danger" id="deleteRecipe">削除</button>
       <button id="loadSample">V60サンプル</button>
     </div>
     <div class="muted" style="margin-top:8px;">
-      例：0:00 蒸らし開始 / 0:30 2投目 / 1:00 3投目 / 2:10 ドリップ終了
+      ※ イベント名に「(+40g)」「(〜120g)」などを書けば、いまの運用のまま使えます。
+    </div>
+
+    <div class="row" style="margin-top:10px;">
+      <input id="label" type="text" placeholder="イベント名（例：2投目（〜120g））" />
+      <input id="mm" type="number" min="0" placeholder="分" />
+      <input id="ss" type="number" min="0" max="59" placeholder="秒" />
+      <button id="add">追加</button>
+      <button id="clear">このレシピを全削除</button>
     </div>
 
     <table>
@@ -63,13 +72,52 @@
   </div>
 
 <script>
-  // ===== Storage =====
-  const KEY = "brew_events_v1";
-  function loadEvents(){
-    try { return JSON.parse(localStorage.getItem(KEY) || "[]"); }
-    catch { return []; }
+  // ===== Storage schema =====
+  // brew_multi_v1 = { activeId: "id", recipes: { [id]: { name: string, events: [{t,label,fired,hitAt?}] } } }
+  const STORE_KEY = "brew_multi_v1";
+  const LEGACY_KEY = "brew_events_v1"; // 旧版があれば移行（あっても無視してOK）
+
+  function uid(){
+    return "r_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
   }
-  function saveEvents(ev){ localStorage.setItem(KEY, JSON.stringify(ev)); }
+
+  function loadStore(){
+    // 既存store
+    try{
+      const s = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+      if(s && s.recipes && s.activeId) return s;
+    }catch(e){}
+
+    // ない場合は初期化（旧データが配列で入っていたら、デフォルトレシピに移行）
+    let legacyEvents = null;
+    try{
+      const le = JSON.parse(localStorage.getItem(LEGACY_KEY) || "null");
+      if(Array.isArray(le)) legacyEvents = le;
+    }catch(e){}
+
+    const id = uid();
+    const store = {
+      activeId: id,
+      recipes: {
+        [id]: {
+          name: "デフォルト",
+          events: Array.isArray(legacyEvents) ? legacyEvents : []
+        }
+      }
+    };
+    saveStore(store);
+    return store;
+  }
+
+  function saveStore(store){
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
+  }
+
+  let store = loadStore();
+
+  function activeRecipe(){
+    return store.recipes[store.activeId];
+  }
 
   // ===== Time utils =====
   function msFrom(mm, ss){
@@ -79,7 +127,7 @@
     const t = Math.max(0, ms);
     const m = Math.floor(t/60000);
     const s = Math.floor((t%60000)/1000);
-    const d = Math.floor((t%1000)/100); // 0-9
+    const d = Math.floor((t%1000)/100);
     return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")+"."+d;
   }
 
@@ -87,6 +135,8 @@
   const clockEl = document.getElementById("clock");
   const eventsTbody = document.getElementById("events");
   const statusEl = document.getElementById("status");
+
+  const recipeSelect = document.getElementById("recipeSelect");
   const labelEl = document.getElementById("label");
   const mmEl = document.getElementById("mm");
   const ssEl = document.getElementById("ss");
@@ -116,23 +166,32 @@
   let elapsedBase = 0;
   let rafId = 0;
 
-  let events = loadEvents(); // {t:ms, label:string, fired:boolean, hitAt?:number}
-
-  function sortEvents(){ events.sort((a,b)=>a.t-b.t); }
+  function setStatus(text){ statusEl.textContent = text; }
 
   function getElapsed(){
     if(!running) return elapsedBase;
     return elapsedBase + (performance.now() - startPerf);
   }
 
-  function resetFired(){
+  function sortEvents(events){ events.sort((a,b)=>a.t-b.t); }
+
+  function resetFired(events){
     events.forEach(e=>{ e.fired=false; delete e.hitAt; });
   }
 
+  function getNext(events, now){
+    sortEvents(events);
+    return events.find(e => !e.fired && e.t >= now) || null;
+  }
+
   function render(){
-    sortEvents();
+    const recipe = activeRecipe();
+    const events = recipe.events || [];
+    sortEvents(events);
+
     const now = getElapsed();
-    let nextIdx = events.findIndex(e => !e.fired && e.t >= now);
+    const nx = getNext(events, now);
+    const nextIdx = nx ? events.indexOf(nx) : -1;
 
     eventsTbody.innerHTML = "";
     events.forEach((e, idx)=>{
@@ -151,24 +210,25 @@
     eventsTbody.querySelectorAll("button[data-i]").forEach(btn=>{
       btn.onclick = () => {
         const i = Number(btn.getAttribute("data-i"));
-        events.splice(i,1);
-        saveEvents(events);
+        recipe.events.splice(i,1);
+        saveStore(store);
         render();
       };
     });
   }
 
-  function setStatus(text){ statusEl.textContent = text; }
-
   function tick(){
     const ms = getElapsed();
     clockEl.textContent = fmt(ms);
+
+    const recipe = activeRecipe();
+    const events = recipe.events || [];
 
     for(const e of events){
       if(!e.fired && ms >= e.t){
         e.fired = true;
         e.hitAt = ms;
-        saveEvents(events);
+        saveStore(store);
         vibrate();
         beep();
       }
@@ -177,6 +237,71 @@
     render();
     if(running) rafId = requestAnimationFrame(tick);
   }
+
+  // ===== Recipe UI =====
+  function rebuildRecipeSelect(){
+    recipeSelect.innerHTML = "";
+    const ids = Object.keys(store.recipes);
+    ids.forEach(id=>{
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = store.recipes[id].name || id;
+      recipeSelect.appendChild(opt);
+    });
+    recipeSelect.value = store.activeId;
+  }
+
+  function switchRecipe(id){
+    // タイマーは止めて切替（安全）
+    running = false;
+    cancelAnimationFrame(rafId);
+    elapsedBase = 0;
+    clockEl.textContent = fmt(0);
+    setStatus("停止中");
+
+    store.activeId = id;
+    saveStore(store);
+    rebuildRecipeSelect();
+    render();
+  }
+
+  recipeSelect.onchange = () => switchRecipe(recipeSelect.value);
+
+  document.getElementById("newRecipe").onclick = () => {
+    const name = prompt("新しいレシピ名（例：エチオピア浅煎り/15g-250g）", "新規レシピ");
+    if(!name) return;
+    const id = uid();
+    store.recipes[id] = { name, events: [] };
+    store.activeId = id;
+    saveStore(store);
+    rebuildRecipeSelect();
+    render();
+  };
+
+  document.getElementById("renameRecipe").onclick = () => {
+    const r = activeRecipe();
+    const name = prompt("レシピ名を変更", r.name || "レシピ");
+    if(!name) return;
+    r.name = name;
+    saveStore(store);
+    rebuildRecipeSelect();
+  };
+
+  document.getElementById("deleteRecipe").onclick = () => {
+    const ids = Object.keys(store.recipes);
+    if(ids.length <= 1){
+      alert("最後の1つは削除できません。");
+      return;
+    }
+    const r = activeRecipe();
+    if(!confirm(`「${r.name}」を削除しますか？`)) return;
+
+    delete store.recipes[store.activeId];
+    store.activeId = Object.keys(store.recipes)[0];
+    saveStore(store);
+    rebuildRecipeSelect();
+    render();
+  };
 
   // ===== Controls =====
   document.getElementById("start").onclick = async () => {
@@ -208,8 +333,11 @@
     running = false;
     cancelAnimationFrame(rafId);
     elapsedBase = 0;
-    resetFired();
-    saveEvents(events);
+
+    const r = activeRecipe();
+    resetFired(r.events);
+
+    saveStore(store);
     clockEl.textContent = fmt(0);
     setStatus("停止中");
     render();
@@ -218,35 +346,41 @@
   document.getElementById("add").onclick = () => {
     const label = (labelEl.value || "").trim();
     const t = msFrom(mmEl.value, ssEl.value);
-    if(!label || t < 0) return;
+    if(!label) return;
 
-    events.push({ t, label, fired:false });
+    const r = activeRecipe();
+    r.events.push({ t, label, fired:false });
+
     labelEl.value = "";
     mmEl.value = "";
     ssEl.value = "";
-    saveEvents(events);
+    saveStore(store);
     render();
   };
 
   document.getElementById("clear").onclick = () => {
-    events = [];
-    saveEvents(events);
+    const r = activeRecipe();
+    if(!confirm(`「${r.name}」のイベントを全削除しますか？`)) return;
+    r.events = [];
+    saveStore(store);
     render();
   };
 
   document.getElementById("loadSample").onclick = () => {
-    // V60例：15g / 250g（蒸らし→分割注湯→終了の合図）
-    events = [
+    const r = activeRecipe();
+    r.events = [
       {t: msFrom(0,0),  label:"蒸らし開始（+40g）", fired:false},
-      {t: msFrom(0,30), label:"2投目（〜120g）", fired:false},
-      {t: msFrom(1,0),  label:"3投目（〜200g）", fired:false},
-      {t: msFrom(1,30), label:"4投目（〜250g）", fired:false},
-      {t: msFrom(2,10), label:"ドリップ終了目安", fired:false}
+      {t: msFrom(0,30), label:"2投目（〜120g）",  fired:false},
+      {t: msFrom(1,0),  label:"3投目（〜200g）",  fired:false},
+      {t: msFrom(1,30), label:"4投目（〜250g）",  fired:false},
+      {t: msFrom(2,10), label:"ドリップ終了目安",   fired:false}
     ];
-    saveEvents(events);
+    saveStore(store);
     render();
   };
 
+  // ===== init =====
+  rebuildRecipeSelect();
   render();
 </script>
 </body>
