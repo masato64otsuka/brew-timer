@@ -44,7 +44,6 @@ td{
   padding:8px 0;
   border-bottom:1px solid #eee;
 }
-tr.next{background:#e9f7ff;}
 .muted{color:#666;font-size:13px;}
 </style>
 </head>
@@ -103,6 +102,9 @@ function loadRecipes(){
     current=data[0];
     renderMeta();
     renderEvents();
+  })
+  .catch(err=>{
+    alert("recipes.json が読み込めません");
   });
 }
 
@@ -165,6 +167,7 @@ function tick(){
       break;
     }
   }
+
   document.getElementById("next").textContent=
     nextEvent ? "次："+fmt(nextEvent.time*1000)+" "+nextEvent.note : "抽出終了";
 
