@@ -386,9 +386,21 @@ function loadRecipes(){
       });
 
       current = data[0] || null;
-      renderFeaturedBadge();
-      renderMeta();
-      renderEvents();
+// ★ URLパラメータでレシピ指定
+const params = new URLSearchParams(location.search);
+const rid = params.get("r");
+
+if(rid){
+  const idx = recipes.findIndex(x => x.id === rid);
+  if(idx >= 0){
+    document.getElementById("recipeSelect").value = idx;
+    current = recipes[idx];
+  }
+}
+renderFeaturedBadge();
+renderMeta();
+renderEvents();
+
     })
     .catch(()=>{
       alert("recipes.json が読み込めません（ファイル名・配置・JSON形式を確認してください）");
