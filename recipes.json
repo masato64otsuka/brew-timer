@@ -1,18 +1,17 @@
 [
-  {
-    "id": "tomio",
-    "name": "トミオフクダ DOT - 樹上完熟の甘み -",
-    "featured": true,
-    "initialTemperature": 88,
-    "notes": "中深煎り特有のナッツの香ばしさと、キャラメルを思わせる深い甘みを最大化するレシピ。後半の注湯を太くし、クリーンな後味を目指します。",
-    "points": [
-      {"time":0, "note":"40ml注いで40秒間しっかり蒸らす（ガスの放出を待つ）"},
-      {"time":40, "note":"60mlを細く円を描くように注ぐ（合計100ml）"},
-      {"time":80, "note":"80mlを中心から外へ一定の速度で注ぐ（合計180ml）"},
-      {"time":120, "note":"90mlをやや太めに注ぎ、濃度を調整する（合計270ml）"},
-      {"time":160, "note":"抽出終了。ドリッパー内に湯が残っていても外す"}
-    ]
-  },
+{
+  "id": "tomio",
+  "name": "ブラジル トミオ・フクダ農園",
+  "initialTemperature": 88,
+  "notes": "樹上完熟の甘み。やわらかなコク。",
+  "image": "images/tomio.jpg",
+  "featured": true,
+  "points": [
+    { "time": 0, "note": "蒸らし開始" },
+    { "time": 30, "note": "中心にゆっくり注湯" },
+    { "time": 60, "note": "外側へ広げる" }
+  ]
+},
   {
     "id": "pakamara",
     "name": "【蜜感】パカマラ ナチュラル",
