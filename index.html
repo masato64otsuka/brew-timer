@@ -3,161 +3,83 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="theme-color" content="#ffffff" />
-<title>抽出タイマー</title>
+<title>観音珈琲 抽出レシピ</title>
 
 <style>
 body{
   font-family:-apple-system,system-ui;
   margin:18px;
-  line-height:1.45;
+  line-height:1.5;
+  background:#fafafa;
 }
-
-h1{font-size:22px;margin:0 0 10px;}
-
+h1{font-size:22px;margin-bottom:8px;}
 .card{
-  border:1px solid #ddd;
-  border-radius:12px;
-  padding:12px;
-  margin:12px 0;
-  background:#fff;
+  background:white;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:16px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.06);
 }
-
 .time{
   font-size:44px;
   font-weight:800;
-  letter-spacing:1px;
 }
-
-button,input,select,textarea{
+.sticky{
+  position:sticky;
+  top:0;
+  background:white;
+  z-index:10;
+}
+select,button{
   font-size:16px;
-  padding:10px 12px;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
 }
-
-button{
-  border-radius:10px;
-  border:1px solid #bbb;
-  background:#fff;
-}
-
-button.primary{border-color:#333;}
-
-.row{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-
 table{
   width:100%;
   border-collapse:collapse;
-  margin-top:10px;
 }
-
-th,td{
+td{
+  padding:8px 0;
   border-bottom:1px solid #eee;
-  padding:8px 6px;
-  text-align:left;
 }
-
 tr.next{background:#e9f7ff;}
-tr.hit{background:#fff1f1;}
-
 .muted{color:#666;font-size:13px;}
-
-textarea{
-  width:100%;
-  min-height:120px;
-  box-sizing:border-box;
-}
-
-/* ===== UX改善：タイマー固定 ===== */
-.stickyTimer{
-  position:sticky;
-  top:0;
-  z-index:50;
-  background:#fff;
-  box-shadow:0 6px 14px rgba(0,0,0,0.06);
-}
 </style>
 </head>
 
 <body>
 
-<h1>抽出タイマー</h1>
+<h1>観音珈琲 抽出レシピ</h1>
 
-<!-- ===== タイマー ===== -->
-<div class="card stickyTimer">
+<div class="card sticky">
   <div class="time" id="clock">00:00.0</div>
-  <div class="muted" id="nextBox">次：—</div>
-
-  <div class="row" style="margin-top:10px;">
-    <button class="primary" id="start">開始</button>
-    <button id="pause">一時停止</button>
-    <button id="reset">リセット</button>
-    <span id="status">停止中</span>
+  <div id="next" class="muted">次：—</div>
+  <div style="margin-top:10px;">
+    <button onclick="start()">開始</button>
+    <button onclick="pause()">停止</button>
+    <button onclick="reset()">リセット</button>
   </div>
 </div>
 
-<!-- ===== レシピ管理 ===== -->
 <div class="card">
-  <div class="row">
-    <select id="recipeSelect"></select>
-    <button id="newRecipe">新規</button>
-    <button id="renameRecipe">名前変更</button>
-    <button id="deleteRecipe">削除</button>
-  </div>
+  <select id="recipeSelect" onchange="changeRecipe()"></select>
+  <div id="meta" class="muted" style="margin-top:6px;"></div>
+</div>
 
-  <div class="row" style="margin-top:10px;">
-    <input id="label" placeholder="イベント名">
-    <input id="mm" type="number" placeholder="分">
-    <input id="ss" type="number" placeholder="秒">
-    <button id="add">追加</button>
-  </div>
-
+<div class="card">
   <table>
-    <thead>
-      <tr><th>時刻</th><th>内容</th><th></th></tr>
-    </thead>
     <tbody id="events"></tbody>
   </table>
 </div>
 
-<!-- ===== インポート ===== -->
-<div class="card">
-  <b>JSONインポート</b>
-  <textarea id="importText"></textarea>
-  <div class="row" style="margin-top:10px;">
-    <button id="importJSON">JSONから追加</button>
-  </div>
-</div>
-
 <script>
 
-const STORE_KEY="brew_multi_final";
+let recipes=[];
+let current=null;
 
-function uid(){return "r_"+Math.random().toString(16).slice(2)}
-
-function loadStore(){
-  const s=JSON.parse(localStorage.getItem(STORE_KEY)||"null");
-  if(s)return s;
-  const id=uid();
-  const store={
-    activeId:id,
-    recipes:{[id]:{name:"デフォルト",events:[]}}
-  };
-  localStorage.setItem(STORE_KEY,JSON.stringify(store));
-  return store;
-}
-
-function saveStore(){localStorage.setItem(STORE_KEY,JSON.stringify(store))}
-
-let store=loadStore();
-
-function activeRecipe(){return store.recipes[store.activeId]}
-
-function msFrom(mm,ss){return (mm||0)*60000+(ss||0)*1000}
+let running=false,startTime=0,base=0;
 
 function fmt(ms){
   const m=Math.floor(ms/60000);
@@ -166,150 +88,90 @@ function fmt(ms){
   return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")+"."+d;
 }
 
-let running=false,startPerf=0,elapsedBase=0;
-
-function getElapsed(){
-  if(!running)return elapsedBase;
-  return elapsedBase+(performance.now()-startPerf);
+function loadRecipes(){
+  fetch("recipes.json")
+  .then(r=>r.json())
+  .then(data=>{
+    recipes=data;
+    const sel=document.getElementById("recipeSelect");
+    data.forEach((r,i)=>{
+      const opt=document.createElement("option");
+      opt.value=i;
+      opt.textContent=r.name;
+      sel.appendChild(opt);
+    });
+    current=data[0];
+    renderMeta();
+    renderEvents();
+  });
 }
 
-function render(){
-  const r=activeRecipe();
-  const now=getElapsed();
+function renderMeta(){
+  document.getElementById("meta").innerHTML=
+    "湯温："+current.initialTemperature+"℃<br>"+current.notes;
+}
+
+function renderEvents(){
   const tbody=document.getElementById("events");
   tbody.innerHTML="";
-
-  let nextEvent=null;
-
-  r.events.sort((a,b)=>a.t-b.t).forEach((e,i)=>{
-    if(!nextEvent && !e.fired && now<=e.t)nextEvent=e;
-
-    if(!e.fired && now>=e.t){
-      e.fired=true;
-      navigator.vibrate?.(80);
-    }
-
+  current.points.forEach(p=>{
     const tr=document.createElement("tr");
-    if(nextEvent===e)tr.classList.add("next");
-    tr.innerHTML=`
-      <td>${fmt(e.t)}</td>
-      <td>${e.label}${e.fired?" 済":""}</td>
-      <td><button data-i="${i}">削除</button></td>
-    `;
+    tr.innerHTML=
+      "<td>"+fmt(p.time*1000)+"</td>"+
+      "<td>"+p.note+"</td>";
     tbody.appendChild(tr);
   });
-
-  document.querySelectorAll("button[data-i]").forEach(b=>{
-    b.onclick=()=>{
-      r.events.splice(b.dataset.i,1);
-      saveStore();render();
-    };
-  });
-
-  updateNextBox(nextEvent);
 }
 
-function updateNextBox(nx){
-  const el=document.getElementById("nextBox");
-  if(!nx){el.textContent="次：—";return;}
-  el.textContent=`次：${fmt(nx.t)} ${nx.label}`;
+function changeRecipe(){
+  const i=document.getElementById("recipeSelect").value;
+  current=recipes[i];
+  reset();
+  renderMeta();
+  renderEvents();
+}
+
+function start(){
+  if(!running){
+    running=true;
+    startTime=performance.now();
+    requestAnimationFrame(tick);
+  }
+}
+
+function pause(){
+  if(running){
+    base+=performance.now()-startTime;
+    running=false;
+  }
+}
+
+function reset(){
+  running=false;
+  base=0;
+  document.getElementById("clock").textContent="00:00.0";
+  document.getElementById("next").textContent="次：—";
 }
 
 function tick(){
-  document.getElementById("clock").textContent=fmt(getElapsed());
-  render();
-  if(running)requestAnimationFrame(tick);
+  if(!running)return;
+  const elapsed=base+(performance.now()-startTime);
+  document.getElementById("clock").textContent=fmt(elapsed);
+
+  let nextEvent=null;
+  for(let p of current.points){
+    if(elapsed < p.time*1000){
+      nextEvent=p;
+      break;
+    }
+  }
+  document.getElementById("next").textContent=
+    nextEvent ? "次："+fmt(nextEvent.time*1000)+" "+nextEvent.note : "抽出終了";
+
+  requestAnimationFrame(tick);
 }
 
-document.getElementById("start").onclick=()=>{
-  if(!running){
-    running=true;
-    startPerf=performance.now();
-    requestAnimationFrame(tick);
-  }
-};
-
-document.getElementById("pause").onclick=()=>{
-  if(running){
-    elapsedBase=getElapsed();
-    running=false;
-  }
-};
-
-document.getElementById("reset").onclick=()=>{
-  running=false;
-  elapsedBase=0;
-  activeRecipe().events.forEach(e=>e.fired=false);
-  render();
-};
-
-document.getElementById("add").onclick=()=>{
-  const label=document.getElementById("label").value;
-  const mm=document.getElementById("mm").value;
-  const ss=document.getElementById("ss").value;
-  activeRecipe().events.push({t:msFrom(mm,ss),label,fired:false});
-  saveStore();render();
-};
-
-document.getElementById("importJSON").onclick=()=>{
-  const text=document.getElementById("importText").value;
-  const points=JSON.parse(text);
-  const id=uid();
-  store.recipes[id]={name:"JSONインポート",events:[]};
-  points.forEach(p=>{
-    store.recipes[id].events.push({
-      t:p.time*1000,
-      label:p.note,
-      fired:false
-    });
-  });
-  store.activeId=id;
-  saveStore();
-  render();
-};
-
-function rebuildSelect(){
-  const sel=document.getElementById("recipeSelect");
-  sel.innerHTML="";
-  Object.keys(store.recipes).forEach(id=>{
-    const opt=document.createElement("option");
-    opt.value=id;
-    opt.textContent=store.recipes[id].name;
-    sel.appendChild(opt);
-  });
-  sel.value=store.activeId;
-}
-
-document.getElementById("newRecipe").onclick=()=>{
-  const name=prompt("レシピ名");
-  if(!name)return;
-  const id=uid();
-  store.recipes[id]={name,events:[]};
-  store.activeId=id;
-  saveStore();rebuildSelect();render();
-};
-
-document.getElementById("renameRecipe").onclick=()=>{
-  const name=prompt("新しい名前");
-  if(!name)return;
-  activeRecipe().name=name;
-  saveStore();rebuildSelect();
-};
-
-document.getElementById("deleteRecipe").onclick=()=>{
-  if(Object.keys(store.recipes).length<=1)return;
-  delete store.recipes[store.activeId];
-  store.activeId=Object.keys(store.recipes)[0];
-  saveStore();rebuildSelect();render();
-};
-
-document.getElementById("recipeSelect").onchange=e=>{
-  store.activeId=e.target.value;
-  saveStore();render();
-};
-
-rebuildSelect();
-render();
+loadRecipes();
 
 </script>
 </body>
