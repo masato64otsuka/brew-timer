@@ -6,94 +6,228 @@
 <title>観音珈琲 抽出レシピ</title>
 
 <style>
+:root{
+  --bg:#f6f4f1;
+  --card:#ffffff;
+  --text:#1e1e1e;
+  --muted:#6b6b6b;
+  --line:#ece7df;
+  --accent:#7a5a2a;          /* coffee brown */
+  --accent2:#b0893f;         /* warm gold */
+  --info:#e8f3ff;
+  --shadow:0 6px 20px rgba(0,0,0,0.08);
+}
+
+*{ box-sizing:border-box; }
+
 body{
   font-family:-apple-system,system-ui;
   margin:18px;
-  line-height:1.5;
-  background:#fafafa;
+  line-height:1.55;
+  background:var(--bg);
+  color:var(--text);
 }
-h1{font-size:22px;margin-bottom:8px;}
+
+.header{
+  margin:6px 0 14px;
+}
+.brand{
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:0.02em;
+}
+.tagline{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:13px;
+}
 
 .card{
-  background:white;
-  border-radius:14px;
+  background:var(--card);
+  border-radius:16px;
   padding:14px;
-  margin-bottom:16px;
-  box-shadow:0 4px 14px rgba(0,0,0,0.06);
-}
-
-.time{
-  font-size:44px;
-  font-weight:800;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+  border:1px solid rgba(0,0,0,0.04);
 }
 
 .sticky{
   position:sticky;
-  top:0;
-  background:white;
+  top:10px;
   z-index:10;
 }
 
-select,button{
-  font-size:16px;
-  padding:10px;
-  border-radius:8px;
-  border:1px solid #ccc;
+.timeRow{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
 }
+
+.time{
+  font-size:46px;
+  font-weight:900;
+  letter-spacing:0.02em;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  border:1px solid var(--line);
+  color:var(--muted);
+  background:#fff;
+  white-space:nowrap;
+}
+
+.badge.featured{
+  border-color:rgba(176,137,63,0.35);
+  background:rgba(176,137,63,0.12);
+  color:#6a4c1b;
+}
+
+.next{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:13px;
+}
+.next b{ color:var(--text); }
+
+.controls{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+button{
+  font-size:16px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:#fff;
+}
+button.primary{
+  border-color:rgba(122,90,42,0.35);
+  background:rgba(122,90,42,0.10);
+  font-weight:700;
+}
+button:active{ transform:translateY(1px); }
+
+select{
+  width:100%;
+  font-size:16px;
+  padding:12px 12px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#fff;
+}
+
+.meta{
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(0,0,0,0.02);
+  color:var(--muted);
+  font-size:13px;
+}
+.meta b{ color:var(--text); }
 
 table{
   width:100%;
   border-collapse:collapse;
 }
-
 td{
-  padding:8px 0;
-  border-bottom:1px solid #eee;
+  padding:10px 8px;
+  border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+td.tcol{
+  width:92px;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
 }
 
+/* 現在ステップ：黄色ベタはやめて、左バー＋淡い背景 */
 tr.active{
-  background:#fff6cc;
-  font-weight:600;
+  background:rgba(122,90,42,0.06);
+}
+tr.active td{
+  font-weight:700;
+  color:var(--text);
+}
+tr.active td:first-child{
+  position:relative;
+}
+tr.active td:first-child:before{
+  content:"";
+  position:absolute;
+  left:-8px;
+  top:0;
+  bottom:0;
+  width:4px;
+  border-radius:4px;
+  background:var(--accent);
 }
 
-.muted{
-  color:#666;
-  font-size:13px;
+/* 次ステップの行（任意）：視線誘導 */
+tr.upcoming{
+  background:rgba(232,243,255,0.65);
+}
+
+.footer{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:12px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>観音珈琲 抽出レシピ</h1>
+<div class="header">
+  <div class="brand">観音珈琲｜抽出レシピ</div>
+  <div class="tagline">焙煎豆に合わせた“最適な一杯”のために。</div>
+</div>
 
+<!-- タイマー（固定） -->
 <div class="card sticky">
-  <div class="time" id="clock">00:00.0</div>
-  <div id="next" class="muted">次：—</div>
-  <div style="margin-top:10px;">
-    <button onclick="start()">開始</button>
+  <div class="timeRow">
+    <div class="time" id="clock">00:00.0</div>
+    <div class="badge" id="featuredBadge" style="display:none;">★ 今週の豆</div>
+  </div>
+
+  <div class="next" id="next">次：—</div>
+
+  <div class="controls">
+    <button class="primary" onclick="start()">開始</button>
     <button onclick="pause()">停止</button>
     <button onclick="reset()">リセット</button>
   </div>
 </div>
 
+<!-- レシピ選択 -->
 <div class="card">
   <select id="recipeSelect" onchange="changeRecipe()"></select>
-  <div id="meta" class="muted" style="margin-top:6px;"></div>
+  <div class="meta" id="meta"></div>
 </div>
 
+<!-- イベント -->
 <div class="card">
   <table>
     <tbody id="events"></tbody>
   </table>
 </div>
 
-<script>
+<div class="footer">※ レシピは観音珈琲の公式データ（recipes.json）から配信されています。</div>
 
+<script>
 let recipes=[];
 let current=null;
 
-let running=false,startTime=0,base=0;
+let running=false, startTime=0, base=0;
 
 function fmt(ms){
   const m=Math.floor(ms/60000);
@@ -102,62 +236,77 @@ function fmt(ms){
   return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")+"."+d;
 }
 
+function safeText(v){ return (v ?? "").toString(); }
+
 function loadRecipes(){
   fetch("recipes.json")
   .then(r=>r.json())
   .then(data=>{
+    // featured を先頭へ
+    data.sort((a,b)=> (b.featured===true) - (a.featured===true));
 
-    // ★ featuredを先頭へ
-    data.sort((a,b)=>{
-      return (b.featured===true) - (a.featured===true);
-    });
+    recipes = data;
 
-    recipes=data;
     const sel=document.getElementById("recipeSelect");
     sel.innerHTML="";
 
     data.forEach((r,i)=>{
       const opt=document.createElement("option");
       opt.value=i;
-      opt.textContent = r.featured
-        ? "★ 今週の豆｜"+r.name
-        : r.name;
+      opt.textContent = r.featured ? "★ 今週の豆｜" + r.name : r.name;
       sel.appendChild(opt);
     });
 
-    current=data[0];
+    current = data[0];
     renderMeta();
     renderEvents();
+    renderFeaturedBadge();
   })
-  .catch(err=>{
-    alert("recipes.json が読み込めません");
+  .catch(()=>{
+    alert("recipes.json が読み込めません（ファイル名・配置・JSON形式を確認してください）");
   });
 }
 
+function renderFeaturedBadge(){
+  const badge=document.getElementById("featuredBadge");
+  if(current && current.featured){
+    badge.style.display="inline-flex";
+    badge.classList.add("featured");
+  }else{
+    badge.style.display="none";
+    badge.classList.remove("featured");
+  }
+}
+
 function renderMeta(){
-  document.getElementById("meta").innerHTML=
-    "湯温："+current.initialTemperature+"℃<br>"+current.notes;
+  const t = Number(current?.initialTemperature);
+  const temp = Number.isFinite(t) ? `${t}℃` : "—";
+  const notes = safeText(current?.notes);
+
+  document.getElementById("meta").innerHTML =
+    `湯温 <b>${temp}</b><br>${notes ? notes : "（メモなし）"}`;
 }
 
 function renderEvents(){
   const tbody=document.getElementById("events");
   tbody.innerHTML="";
-  current.points.forEach((p,index)=>{
+  (current?.points || []).forEach((p,index)=>{
     const tr=document.createElement("tr");
     tr.dataset.index=index;
-    tr.innerHTML=
-      "<td>"+fmt(p.time*1000)+"</td>"+
-      "<td>"+p.note+"</td>";
+    tr.innerHTML =
+      `<td class="tcol">${fmt((p.time||0)*1000)}</td>`+
+      `<td>${safeText(p.note)}</td>`;
     tbody.appendChild(tr);
   });
 }
 
 function changeRecipe(){
-  const i=document.getElementById("recipeSelect").value;
-  current=recipes[i];
+  const i = Number(document.getElementById("recipeSelect").value);
+  current = recipes[i];
   reset();
   renderMeta();
   renderEvents();
+  renderFeaturedBadge();
 }
 
 function start(){
@@ -170,7 +319,7 @@ function start(){
 
 function pause(){
   if(running){
-    base+=performance.now()-startTime;
+    base += performance.now() - startTime;
     running=false;
   }
 }
@@ -180,51 +329,59 @@ function reset(){
   base=0;
   document.getElementById("clock").textContent="00:00.0";
   document.getElementById("next").textContent="次：—";
-
   document.querySelectorAll("#events tr").forEach(tr=>{
-    tr.classList.remove("active");
+    tr.classList.remove("active","upcoming");
   });
 }
 
 function tick(){
-  if(!running)return;
+  if(!running) return;
 
-  const elapsed=base+(performance.now()-startTime);
-  document.getElementById("clock").textContent=fmt(elapsed);
+  const elapsed = base + (performance.now() - startTime);
+  document.getElementById("clock").textContent = fmt(elapsed);
 
-  // 次イベント
-  let nextEvent=null;
-  for(let p of current.points){
-    if(elapsed < p.time*1000){
-      nextEvent=p;
-      break;
+  // active/upcoming を一旦クリア
+  const rows = Array.from(document.querySelectorAll("#events tr"));
+  rows.forEach(tr=>tr.classList.remove("active","upcoming"));
+
+  // 現在ステップ（最後に通過したポイント）
+  const pts = current?.points || [];
+  let activeIndex = -1;
+  for(let i=pts.length-1;i>=0;i--){
+    if(elapsed >= (pts[i].time||0)*1000){
+      activeIndex = i; break;
+    }
+  }
+  if(activeIndex >= 0){
+    const activeRow = document.querySelector(`#events tr[data-index="${activeIndex}"]`);
+    if(activeRow) activeRow.classList.add("active");
+  }
+
+  // 次イベント（まだ到達していない最初）
+  let nextIndex = -1;
+  for(let i=0;i<pts.length;i++){
+    if(elapsed < (pts[i].time||0)*1000){
+      nextIndex = i; break;
     }
   }
 
-  document.getElementById("next").textContent=
-    nextEvent
-      ? "次："+fmt(nextEvent.time*1000)+" "+nextEvent.note
-      : "抽出終了";
+  if(nextIndex >= 0){
+    const nx = pts[nextIndex];
+    document.getElementById("next").innerHTML =
+      `次：<b>${fmt((nx.time||0)*1000)}</b>　${safeText(nx.note)}`;
 
-  // まずactiveを全部外す
-  document.querySelectorAll("#events tr").forEach(tr=>{
-    tr.classList.remove("active");
-  });
-
-  // 現在ステップをハイライト
-  for(let i=current.points.length-1;i>=0;i--){
-    if(elapsed >= current.points[i].time*1000){
-      const row=document.querySelector(`#events tr[data-index="${i}"]`);
-      if(row) row.classList.add("active");
-      break;
-    }
+    // 次の行をうっすら色付け
+    const upcomingRow = document.querySelector(`#events tr[data-index="${nextIndex}"]`);
+    if(upcomingRow) upcomingRow.classList.add("upcoming");
+  }else{
+    document.getElementById("next").innerHTML = `抽出終了`;
   }
 
   requestAnimationFrame(tick);
 }
 
 loadRecipes();
-
 </script>
+
 </body>
 </html>
