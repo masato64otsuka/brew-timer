@@ -119,6 +119,16 @@ select{
   border:1px solid var(--line);
   background:#fff;
 }
+
+/* ★追加：豆写真 */
+.beanPhoto{
+  width:100%;
+  border-radius:12px;
+  margin-bottom:10px;
+  display:block;
+  border:1px solid rgba(0,0,0,0.06);
+}
+
 .meta{
   margin-top:10px;
   padding:10px 12px;
@@ -193,6 +203,8 @@ tr.upcoming{ background:rgba(232,243,255,0.65); }
 
 <!-- レシピ選択 -->
 <div class="card">
+  <!-- ★追加：豆写真（必要最低限） -->
+  <img id="beanPhoto" class="beanPhoto" alt="豆写真" style="display:none;">
   <select id="recipeSelect" onchange="changeRecipe()"></select>
   <div class="meta" id="meta"></div>
 </div>
@@ -223,6 +235,14 @@ let lastFiveSecIndex = -1;        // 5秒前予告の重複防止
 let finishedSpoken = false;       // 完了アナウンスの重複防止
 
 const VOL_NOTICE_KEY = "kannon_brew_volume_notice_seen_v1";
+
+/* ★追加：レシピID→豆写真（最小実装）
+   - ここに増やしていけばOK
+   - 画像ファイルは GitHub Pages で読める場所（同階層など）に置く
+*/
+const RECIPE_IMAGES = {
+  "tomiofukuda-dot": "トミオフクダDryOnTree2.png"
+};
 
 /* ========= Wake Lock ========= */
 let wakeLock = null;
@@ -359,6 +379,18 @@ function renderMeta(){
   const notes = safeText(current?.notes);
   document.getElementById("meta").innerHTML =
     `湯温 <b>${temp}</b><br>${notes ? notes : "（メモなし）"}`;
+
+  // ★追加：豆写真の出し分け（最小）
+  const img = document.getElementById("beanPhoto");
+  if(!img) return;
+
+  const src = current?.id ? RECIPE_IMAGES[current.id] : null;
+  if(src){
+    img.src = src;
+    img.style.display = "block";
+  }else{
+    img.style.display = "none";
+  }
 }
 
 function renderEvents(){
@@ -393,21 +425,21 @@ function loadRecipes(){
       });
 
       current = data[0] || null;
-// ★ URLパラメータでレシピ指定
-const params = new URLSearchParams(location.search);
-const rid = params.get("r");
 
-if(rid){
-  const idx = recipes.findIndex(x => x.id === rid);
-  if(idx >= 0){
-    document.getElementById("recipeSelect").value = idx;
-    current = recipes[idx];
-  }
-}
-renderFeaturedBadge();
-renderMeta();
-renderEvents();
+      // ★ URLパラメータでレシピ指定
+      const params = new URLSearchParams(location.search);
+      const rid = params.get("r");
+      if(rid){
+        const idx = recipes.findIndex(x => x.id === rid);
+        if(idx >= 0){
+          document.getElementById("recipeSelect").value = idx;
+          current = recipes[idx];
+        }
+      }
 
+      renderFeaturedBadge();
+      renderMeta();
+      renderEvents();
     })
     .catch(()=>{
       alert("recipes.json が読み込めません（ファイル名・配置・JSON形式を確認してください）");
