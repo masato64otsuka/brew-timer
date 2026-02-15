@@ -13,6 +13,7 @@ body{
   background:#fafafa;
 }
 h1{font-size:22px;margin-bottom:8px;}
+
 .card{
   background:white;
   border-radius:14px;
@@ -20,31 +21,45 @@ h1{font-size:22px;margin-bottom:8px;}
   margin-bottom:16px;
   box-shadow:0 4px 14px rgba(0,0,0,0.06);
 }
+
 .time{
   font-size:44px;
   font-weight:800;
 }
+
 .sticky{
   position:sticky;
   top:0;
   background:white;
   z-index:10;
 }
+
 select,button{
   font-size:16px;
   padding:10px;
   border-radius:8px;
   border:1px solid #ccc;
 }
+
 table{
   width:100%;
   border-collapse:collapse;
 }
+
 td{
   padding:8px 0;
   border-bottom:1px solid #eee;
 }
-.muted{color:#666;font-size:13px;}
+
+tr.active{
+  background:#fff6cc;
+  font-weight:600;
+}
+
+.muted{
+  color:#666;
+  font-size:13px;
+}
 </style>
 </head>
 
@@ -91,14 +106,25 @@ function loadRecipes(){
   fetch("recipes.json")
   .then(r=>r.json())
   .then(data=>{
+
+    // ★ featuredを先頭へ
+    data.sort((a,b)=>{
+      return (b.featured===true) - (a.featured===true);
+    });
+
     recipes=data;
     const sel=document.getElementById("recipeSelect");
+    sel.innerHTML="";
+
     data.forEach((r,i)=>{
       const opt=document.createElement("option");
       opt.value=i;
-      opt.textContent=r.name;
+      opt.textContent = r.featured
+        ? "★ 今週の豆｜"+r.name
+        : r.name;
       sel.appendChild(opt);
     });
+
     current=data[0];
     renderMeta();
     renderEvents();
@@ -116,8 +142,9 @@ function renderMeta(){
 function renderEvents(){
   const tbody=document.getElementById("events");
   tbody.innerHTML="";
-  current.points.forEach(p=>{
+  current.points.forEach((p,index)=>{
     const tr=document.createElement("tr");
+    tr.dataset.index=index;
     tr.innerHTML=
       "<td>"+fmt(p.time*1000)+"</td>"+
       "<td>"+p.note+"</td>";
@@ -153,13 +180,19 @@ function reset(){
   base=0;
   document.getElementById("clock").textContent="00:00.0";
   document.getElementById("next").textContent="次：—";
+
+  document.querySelectorAll("#events tr").forEach(tr=>{
+    tr.classList.remove("active");
+  });
 }
 
 function tick(){
   if(!running)return;
+
   const elapsed=base+(performance.now()-startTime);
   document.getElementById("clock").textContent=fmt(elapsed);
 
+  // 次イベント
   let nextEvent=null;
   for(let p of current.points){
     if(elapsed < p.time*1000){
@@ -169,7 +202,23 @@ function tick(){
   }
 
   document.getElementById("next").textContent=
-    nextEvent ? "次："+fmt(nextEvent.time*1000)+" "+nextEvent.note : "抽出終了";
+    nextEvent
+      ? "次："+fmt(nextEvent.time*1000)+" "+nextEvent.note
+      : "抽出終了";
+
+  // まずactiveを全部外す
+  document.querySelectorAll("#events tr").forEach(tr=>{
+    tr.classList.remove("active");
+  });
+
+  // 現在ステップをハイライト
+  for(let i=current.points.length-1;i>=0;i--){
+    if(elapsed >= current.points[i].time*1000){
+      const row=document.querySelector(`#events tr[data-index="${i}"]`);
+      if(row) row.classList.add("active");
+      break;
+    }
+  }
 
   requestAnimationFrame(tick);
 }
