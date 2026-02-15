@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>観音珈琲 抽出レシピ</title>
+<title>観音珈琲 抽出ナビ</title>
 
 <style>
 :root{
@@ -12,175 +12,56 @@
   --text:#1e1e1e;
   --muted:#6b6b6b;
   --line:#ece7df;
-  --accent:#7a5a2a;          /* coffee brown */
-  --accent2:#b0893f;         /* warm gold */
-  --info:#e8f3ff;
+  --accent:#7a5a2a;
+  --accent2:#b0893f;
   --shadow:0 6px 20px rgba(0,0,0,0.08);
 }
-
-*{ box-sizing:border-box; }
-
+*{box-sizing:border-box;}
 body{
   font-family:-apple-system,system-ui;
   margin:18px;
-  line-height:1.55;
   background:var(--bg);
   color:var(--text);
 }
-
-.header{
-  margin:6px 0 14px;
-}
-.brand{
-  font-size:22px;
-  font-weight:900;
-  letter-spacing:0.02em;
-}
-.tagline{
-  margin-top:4px;
-  color:var(--muted);
-  font-size:13px;
-}
-
+.header{margin-bottom:14px;}
+.brand{font-size:22px;font-weight:900;}
 .card{
   background:var(--card);
   border-radius:16px;
   padding:14px;
   margin-bottom:14px;
   box-shadow:var(--shadow);
-  border:1px solid rgba(0,0,0,0.04);
 }
-
-.sticky{
-  position:sticky;
-  top:10px;
-  z-index:10;
-}
-
-.timeRow{
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:12px;
-}
-
-.time{
-  font-size:46px;
-  font-weight:900;
-  letter-spacing:0.02em;
-}
-
-.badge{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:12px;
-  border:1px solid var(--line);
-  color:var(--muted);
-  background:#fff;
-  white-space:nowrap;
-}
-
-.badge.featured{
-  border-color:rgba(176,137,63,0.35);
-  background:rgba(176,137,63,0.12);
-  color:#6a4c1b;
-}
-
-.next{
-  margin-top:8px;
-  color:var(--muted);
-  font-size:13px;
-}
-.next b{ color:var(--text); }
-
-.controls{
-  display:flex;
-  gap:10px;
-  margin-top:12px;
-}
+.sticky{position:sticky;top:10px;z-index:10;}
+.time{font-size:46px;font-weight:900;}
+.next{margin-top:6px;color:var(--muted);}
+.controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 button{
-  font-size:16px;
   padding:10px 12px;
   border-radius:10px;
   border:1px solid var(--line);
   background:#fff;
 }
 button.primary{
-  border-color:rgba(122,90,42,0.35);
-  background:rgba(122,90,42,0.10);
-  font-weight:700;
+  background:rgba(122,90,42,0.1);
+  border-color:rgba(122,90,42,0.3);
 }
-button:active{ transform:translateY(1px); }
-
 select{
   width:100%;
-  font-size:16px;
-  padding:12px 12px;
-  border-radius:12px;
+  padding:10px;
+  border-radius:10px;
   border:1px solid var(--line);
-  background:#fff;
 }
-
-.meta{
-  margin-top:10px;
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid var(--line);
-  background:rgba(0,0,0,0.02);
-  color:var(--muted);
-  font-size:13px;
-}
-.meta b{ color:var(--text); }
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-td{
-  padding:10px 8px;
-  border-bottom:1px solid var(--line);
-  vertical-align:top;
-}
-td.tcol{
-  width:92px;
-  color:var(--muted);
-  font-variant-numeric:tabular-nums;
-}
-
-/* 現在ステップ：黄色ベタはやめて、左バー＋淡い背景 */
-tr.active{
-  background:rgba(122,90,42,0.06);
-}
-tr.active td{
-  font-weight:700;
-  color:var(--text);
-}
-tr.active td:first-child{
-  position:relative;
-}
-tr.active td:first-child:before{
-  content:"";
-  position:absolute;
-  left:-8px;
-  top:0;
-  bottom:0;
-  width:4px;
-  border-radius:4px;
-  background:var(--accent);
-}
-
-/* 次ステップの行（任意）：視線誘導 */
-tr.upcoming{
-  background:rgba(232,243,255,0.65);
-}
-
-.footer{
-  margin-top:10px;
-  color:var(--muted);
+table{width:100%;border-collapse:collapse;}
+td{padding:8px;border-bottom:1px solid var(--line);}
+tr.active{background:rgba(122,90,42,0.08);font-weight:700;}
+tr.upcoming{background:rgba(232,243,255,0.6);}
+.badge{
   font-size:12px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(176,137,63,0.2);
+  margin-left:8px;
 }
 </style>
 </head>
@@ -188,46 +69,52 @@ tr.upcoming{
 <body>
 
 <div class="header">
-  <div class="brand">観音珈琲｜抽出レシピ</div>
-  <div class="tagline">焙煎豆に合わせた“最適な一杯”のために。</div>
+  <div class="brand">観音珈琲 抽出ナビ</div>
 </div>
 
-<!-- タイマー（固定） -->
 <div class="card sticky">
-  <div class="timeRow">
-    <div class="time" id="clock">00:00.0</div>
-    <div class="badge" id="featuredBadge" style="display:none;">★ 今週の豆</div>
-  </div>
-
+  <div class="time" id="clock">00:00.0</div>
   <div class="next" id="next">次：—</div>
-
   <div class="controls">
     <button class="primary" onclick="start()">開始</button>
     <button onclick="pause()">停止</button>
     <button onclick="reset()">リセット</button>
+    <button onclick="toggleGuide()">音声ON/OFF</button>
   </div>
 </div>
 
-<!-- レシピ選択 -->
 <div class="card">
   <select id="recipeSelect" onchange="changeRecipe()"></select>
-  <div class="meta" id="meta"></div>
+  <div id="meta" style="margin-top:8px;color:#666;"></div>
 </div>
 
-<!-- イベント -->
 <div class="card">
   <table>
     <tbody id="events"></tbody>
   </table>
 </div>
 
-<div class="footer">※ レシピは観音珈琲の公式データ（recipes.json）から配信されています。</div>
-
 <script>
+
 let recipes=[];
 let current=null;
 
-let running=false, startTime=0, base=0;
+let running=false,startTime=0,base=0;
+
+let lastSpokenIndex=-1;
+let lastFiveSecIndex=-1;
+let finishedSpoken=false;
+let guideEnabled=true;
+let femaleVoice=null;
+
+function loadVoices(){
+  const voices=speechSynthesis.getVoices();
+  femaleVoice=voices.find(v=>
+    v.lang.startsWith("ja") &&
+    (v.name.includes("女性") || v.name.toLowerCase().includes("female"))
+  ) || voices.find(v=>v.lang.startsWith("ja"));
+}
+speechSynthesis.onvoiceschanged=loadVoices;
 
 function fmt(ms){
   const m=Math.floor(ms/60000);
@@ -236,77 +123,61 @@ function fmt(ms){
   return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")+"."+d;
 }
 
-function safeText(v){ return (v ?? "").toString(); }
+function speak(text){
+  if(!guideEnabled) return;
+  if(!('speechSynthesis' in window)) return;
+  const uttr=new SpeechSynthesisUtterance(text);
+  uttr.lang="ja-JP";
+  uttr.pitch=1.2;
+  if(femaleVoice) uttr.voice=femaleVoice;
+  speechSynthesis.speak(uttr);
+}
+
+function vibrateShort(){
+  if(navigator.vibrate) navigator.vibrate(200);
+}
 
 function loadRecipes(){
   fetch("recipes.json")
   .then(r=>r.json())
   .then(data=>{
-    // featured を先頭へ
-    data.sort((a,b)=> (b.featured===true) - (a.featured===true));
-
-    recipes = data;
-
+    data.sort((a,b)=> (b.featured===true)-(a.featured===true));
+    recipes=data;
     const sel=document.getElementById("recipeSelect");
     sel.innerHTML="";
-
     data.forEach((r,i)=>{
       const opt=document.createElement("option");
       opt.value=i;
-      opt.textContent = r.featured ? "★ 今週の豆｜" + r.name : r.name;
+      opt.textContent=r.featured?"★ 今週の豆｜"+r.name:r.name;
       sel.appendChild(opt);
     });
-
-    current = data[0];
+    current=data[0];
     renderMeta();
     renderEvents();
-    renderFeaturedBadge();
-  })
-  .catch(()=>{
-    alert("recipes.json が読み込めません（ファイル名・配置・JSON形式を確認してください）");
   });
 }
 
-function renderFeaturedBadge(){
-  const badge=document.getElementById("featuredBadge");
-  if(current && current.featured){
-    badge.style.display="inline-flex";
-    badge.classList.add("featured");
-  }else{
-    badge.style.display="none";
-    badge.classList.remove("featured");
-  }
-}
-
 function renderMeta(){
-  const t = Number(current?.initialTemperature);
-  const temp = Number.isFinite(t) ? `${t}℃` : "—";
-  const notes = safeText(current?.notes);
-
-  document.getElementById("meta").innerHTML =
-    `湯温 <b>${temp}</b><br>${notes ? notes : "（メモなし）"}`;
+  document.getElementById("meta").innerHTML=
+    "湯温："+current.initialTemperature+"℃<br>"+current.notes;
 }
 
 function renderEvents(){
   const tbody=document.getElementById("events");
   tbody.innerHTML="";
-  (current?.points || []).forEach((p,index)=>{
+  current.points.forEach((p,i)=>{
     const tr=document.createElement("tr");
-    tr.dataset.index=index;
-    tr.innerHTML =
-      `<td class="tcol">${fmt((p.time||0)*1000)}</td>`+
-      `<td>${safeText(p.note)}</td>`;
+    tr.dataset.index=i;
+    tr.innerHTML="<td>"+fmt(p.time*1000)+"</td><td>"+p.note+"</td>";
     tbody.appendChild(tr);
   });
 }
 
 function changeRecipe(){
-  const i = Number(document.getElementById("recipeSelect").value);
-  current = recipes[i];
+  current=recipes[document.getElementById("recipeSelect").value];
   reset();
   renderMeta();
   renderEvents();
-  renderFeaturedBadge();
 }
 
 function start(){
@@ -319,7 +190,7 @@ function start(){
 
 function pause(){
   if(running){
-    base += performance.now() - startTime;
+    base+=performance.now()-startTime;
     running=false;
   }
 }
@@ -327,6 +198,10 @@ function pause(){
 function reset(){
   running=false;
   base=0;
+  lastSpokenIndex=-1;
+  lastFiveSecIndex=-1;
+  finishedSpoken=false;
+  speechSynthesis.cancel();
   document.getElementById("clock").textContent="00:00.0";
   document.getElementById("next").textContent="次：—";
   document.querySelectorAll("#events tr").forEach(tr=>{
@@ -334,47 +209,68 @@ function reset(){
   });
 }
 
+function toggleGuide(){
+  guideEnabled=!guideEnabled;
+  alert("音声ガイド "+(guideEnabled?"ON":"OFF"));
+}
+
 function tick(){
   if(!running) return;
+  const elapsed=base+(performance.now()-startTime);
+  document.getElementById("clock").textContent=fmt(elapsed);
 
-  const elapsed = base + (performance.now() - startTime);
-  document.getElementById("clock").textContent = fmt(elapsed);
-
-  // active/upcoming を一旦クリア
-  const rows = Array.from(document.querySelectorAll("#events tr"));
-  rows.forEach(tr=>tr.classList.remove("active","upcoming"));
-
-  // 現在ステップ（最後に通過したポイント）
-  const pts = current?.points || [];
-  let activeIndex = -1;
+  const pts=current.points;
+  let activeIndex=-1;
   for(let i=pts.length-1;i>=0;i--){
-    if(elapsed >= (pts[i].time||0)*1000){
-      activeIndex = i; break;
+    if(elapsed>=pts[i].time*1000){
+      activeIndex=i;
+      break;
     }
   }
-  if(activeIndex >= 0){
-    const activeRow = document.querySelector(`#events tr[data-index="${activeIndex}"]`);
-    if(activeRow) activeRow.classList.add("active");
-  }
 
-  // 次イベント（まだ到達していない最初）
-  let nextIndex = -1;
+  let nextIndex=-1;
   for(let i=0;i<pts.length;i++){
-    if(elapsed < (pts[i].time||0)*1000){
-      nextIndex = i; break;
+    if(elapsed<pts[i].time*1000){
+      nextIndex=i;
+      break;
     }
   }
 
-  if(nextIndex >= 0){
-    const nx = pts[nextIndex];
-    document.getElementById("next").innerHTML =
-      `次：<b>${fmt((nx.time||0)*1000)}</b>　${safeText(nx.note)}`;
+  document.querySelectorAll("#events tr").forEach(tr=>{
+    tr.classList.remove("active","upcoming");
+  });
 
-    // 次の行をうっすら色付け
-    const upcomingRow = document.querySelector(`#events tr[data-index="${nextIndex}"]`);
-    if(upcomingRow) upcomingRow.classList.add("upcoming");
+  if(activeIndex>=0){
+    const row=document.querySelector(`#events tr[data-index="${activeIndex}"]`);
+    if(row) row.classList.add("active");
+
+    if(activeIndex!==lastSpokenIndex){
+      speak(pts[activeIndex].note);
+      vibrateShort();
+      lastSpokenIndex=activeIndex;
+    }
+  }
+
+  if(nextIndex>=0){
+    const row=document.querySelector(`#events tr[data-index="${nextIndex}"]`);
+    if(row) row.classList.add("upcoming");
+
+    const nextTime=pts[nextIndex].time*1000;
+    if(nextTime-elapsed<=5000 && nextIndex!==lastFiveSecIndex){
+      speak("まもなく次の工程です");
+      vibrateShort();
+      lastFiveSecIndex=nextIndex;
+    }
+
+    document.getElementById("next").textContent=
+      "次："+fmt(nextTime)+" "+pts[nextIndex].note;
   }else{
-    document.getElementById("next").innerHTML = `抽出終了`;
+    document.getElementById("next").textContent="抽出終了";
+    if(!finishedSpoken){
+      speak("抽出完了です");
+      vibrateShort();
+      finishedSpoken=true;
+    }
   }
 
   requestAnimationFrame(tick);
@@ -382,6 +278,5 @@ function tick(){
 
 loadRecipes();
 </script>
-
 </body>
 </html>
