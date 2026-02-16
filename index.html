@@ -203,7 +203,6 @@ tr.upcoming{ background:rgba(232,243,255,0.65); }
 
 <!-- レシピ選択 -->
 <div class="card">
-  <!-- ★追加：豆写真（必要最低限） -->
   <img id="beanPhoto" class="beanPhoto" alt="豆写真" style="display:none;">
   <select id="recipeSelect" onchange="changeRecipe()"></select>
   <div class="meta" id="meta"></div>
@@ -227,22 +226,14 @@ let running = false;
 let startTime = 0;
 let base = 0;
 
-let guideEnabled = true;          // 音声ガイドON/OFF
+let guideEnabled = true;
 let femaleVoice = null;
 
-let lastSpokenIndex = -1;         // ステップ到達の重複防止
-let lastFiveSecIndex = -1;        // 5秒前予告の重複防止
-let finishedSpoken = false;       // 完了アナウンスの重複防止
+let lastSpokenIndex = -1;
+let lastFiveSecIndex = -1;
+let finishedSpoken = false;
 
 const VOL_NOTICE_KEY = "kannon_brew_volume_notice_seen_v1";
-
-/* ★追加：レシピID→豆写真（最小実装）
-   - ここに増やしていけばOK
-   - 画像ファイルは GitHub Pages で読める場所（同階層など）に置く
-*/
-const RECIPE_IMAGES = {
-  "tomiofukuda-dot": "トミオフクダDryOnTree2.png"
-};
 
 /* ========= Wake Lock ========= */
 let wakeLock = null;
@@ -260,7 +251,6 @@ async function enableWakeLock(){
     wakeLock = await navigator.wakeLock.request("screen");
     setWakeBadge(true);
 
-    // 何らかの理由で解除された時にUIを戻す
     wakeLock.addEventListener("release", ()=>{
       setWakeBadge(false);
       wakeLock = null;
@@ -268,7 +258,6 @@ async function enableWakeLock(){
 
     return true;
   }catch(e){
-    // 取得できない（低電力/OS制限/権限など）
     setWakeBadge(false);
     wakeLock = null;
     return false;
@@ -285,19 +274,16 @@ async function disableWakeLock(){
   setWakeBadge(false);
 }
 
-// タブ復帰/画面復帰で再取得（タイマー動作中のみ）
 document.addEventListener("visibilitychange", async ()=>{
   if(document.visibilityState === "visible" && running){
     await enableWakeLock();
   }
 });
 
-/* ========= 音声（SpeechSynthesis） ========= */
+/* ========= 音声 ========= */
 function loadVoices(){
   if(!("speechSynthesis" in window)) return;
   const voices = speechSynthesis.getVoices();
-
-  // “女性”表記がある場合は優先。無ければ日本語ボイスの先頭。
   femaleVoice =
     voices.find(v => v.lang.startsWith("ja") && (v.name.includes("女性") || v.name.toLowerCase().includes("female")))
     || voices.find(v => v.lang.startsWith("ja"))
@@ -316,7 +302,7 @@ function speak(text){
     const uttr = new SpeechSynthesisUtterance(String(text || ""));
     uttr.lang = "ja-JP";
     uttr.rate = 1.0;
-    uttr.pitch = 1.15; // やや高めで聞き取りやすく
+    uttr.pitch = 1.15;
     if(femaleVoice) uttr.voice = femaleVoice;
     speechSynthesis.speak(uttr);
   }catch(_){}
@@ -343,7 +329,7 @@ function fmt(ms){
 }
 function safeText(v){ return (v ?? "").toString(); }
 
-/* ========= 音量注意ダイアログ（初回のみ） ========= */
+/* ========= 音量注意 ========= */
 function showVolumeNoticeOnce(){
   try{
     const seen = localStorage.getItem(VOL_NOTICE_KEY) === "1";
@@ -360,7 +346,7 @@ function showVolumeNoticeOnce(){
   }catch(_){}
 }
 
-/* ========= レシピ読み込み ========= */
+/* ========= レシピ ========= */
 function renderFeaturedBadge(){
   const badge = document.getElementById("featuredBadge");
   if(!badge) return;
@@ -380,13 +366,12 @@ function renderMeta(){
   document.getElementById("meta").innerHTML =
     `湯温 <b>${temp}</b><br>${notes ? notes : "（メモなし）"}`;
 
-  // ★追加：豆写真の出し分け（最小）
   const img = document.getElementById("beanPhoto");
   if(!img) return;
 
-  const src = current?.id ? RECIPE_IMAGES[current.id] : null;
-  if(src){
-    img.src = src;
+  // recipes.json の image を直接使う
+  if(current?.image){
+    img.src = encodeURI(current.image);
     img.style.display = "block";
   }else{
     img.style.display = "none";
@@ -410,7 +395,6 @@ function loadRecipes(){
   fetch("recipes.json")
     .then(r => r.json())
     .then(data => {
-      // featured を先頭へ
       data.sort((a,b)=> (b.featured===true) - (a.featured===true));
       recipes = data;
 
@@ -426,7 +410,6 @@ function loadRecipes(){
 
       current = data[0] || null;
 
-      // ★ URLパラメータでレシピ指定
       const params = new URLSearchParams(location.search);
       const rid = params.get("r");
       if(rid){
@@ -465,17 +448,12 @@ function toggleGuide(){
 /* ========= タイマー ========= */
 function start(){
   if(!current) return;
-
-  // 初回のみ「音量注意」
   showVolumeNoticeOnce();
 
   if(!running){
     running = true;
     startTime = performance.now();
-
-    // タイマー開始時にWake Lock取得
     enableWakeLock();
-
     requestAnimationFrame(tick);
   }
 }
@@ -484,8 +462,6 @@ function pause(){
   if(running){
     base += performance.now() - startTime;
     running = false;
-
-    // 停止時はWake Lock解除（バッテリー配慮）
     disableWakeLock();
   }
 }
@@ -494,13 +470,11 @@ function reset(){
   running = false;
   base = 0;
 
-  // 状態リセット
   lastSpokenIndex = -1;
   lastFiveSecIndex = -1;
   finishedSpoken = false;
   cancelSpeech();
 
-  // Wake Lock解除
   disableWakeLock();
 
   document.getElementById("clock").textContent = "00:00.0";
@@ -518,7 +492,6 @@ function tick(){
   const rows = Array.from(document.querySelectorAll("#events tr"));
   rows.forEach(tr => tr.classList.remove("active","upcoming"));
 
-  // 現在ステップ（最後に到達したpoint）
   let activeIndex = -1;
   for(let i=pts.length-1;i>=0;i--){
     if(elapsed >= (pts[i].time||0)*1000){
@@ -530,7 +503,6 @@ function tick(){
     const activeRow = document.querySelector(`#events tr[data-index="${activeIndex}"]`);
     if(activeRow) activeRow.classList.add("active");
 
-    // 到達時：音声＋バイブ（1回だけ）
     if(activeIndex !== lastSpokenIndex){
       speak(pts[activeIndex].note);
       vibrateShort();
@@ -538,7 +510,6 @@ function tick(){
     }
   }
 
-  // 次ステップ（まだ到達していない最初）
   let nextIndex = -1;
   for(let i=0;i<pts.length;i++){
     if(elapsed < (pts[i].time||0)*1000){
@@ -554,7 +525,6 @@ function tick(){
     const upcomingRow = document.querySelector(`#events tr[data-index="${nextIndex}"]`);
     if(upcomingRow) upcomingRow.classList.add("upcoming");
 
-    // 5秒前予告：音声＋バイブ（1回だけ）
     if(nextTime - elapsed <= 5000 && nextIndex !== lastFiveSecIndex){
       speak("まもなく次の工程です");
       vibrateShort();
@@ -563,11 +533,9 @@ function tick(){
 
     document.getElementById("next").innerHTML =
       `次：<b>${fmt(nextTime)}</b>　${safeText(nx.note)}`;
-
   }else{
     document.getElementById("next").innerHTML = "抽出終了";
 
-    // 終了時：音声＋バイブ（1回だけ）
     if(!finishedSpoken){
       speak("抽出完了です");
       vibrateShort();
