@@ -380,21 +380,31 @@ function renderFeaturedBadge(){
 function renderMeta(){
   const t = Number(current?.initialTemperature);
   const temp = Number.isFinite(t) ? `${t}℃` : "—";
+
+  const dose = Number(current?.dose);
+  const doseText = Number.isFinite(dose) ? `${dose}g` : "—";
+
+  const water = Number(current?.totalWater);
+  const waterText = Number.isFinite(water) ? `${water}ml` : "—";
+
+  const target = safeText(current?.targetTime) || "—";
   const notes = safeText(current?.notes);
 
   document.getElementById("meta").innerHTML = `
-    <div class="metaTemp">湯温 ${temp}</div>
+    <div class="metaTemp">湯温 ${temp}　｜　豆 ${doseText}　｜　湯量 ${waterText}　｜　目標 ${target}</div>
     <div class="metaNote">${notes ? notes : "（メモなし）"}</div>
   `;
 
+  // 豆写真（recipes.json の image を直接使う）
   const img = document.getElementById("beanPhoto");
-  if(current?.image){
+  if(img && current?.image){
     img.src = encodeURI(current.image);
     img.style.display = "block";
-  }else{
+  }else if(img){
     img.style.display = "none";
   }
 }
+
 
 function renderEvents(){
   const tbody = document.getElementById("events");
