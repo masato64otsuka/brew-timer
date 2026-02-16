@@ -1,22 +1,28 @@
 [
-{
-  "id": "tomio",
-  "name": "ブラジル トミオ・フクダDOT（Dry On Tree）",
-  "initialTemperature": 88,
-  "notes": "DOTの蜜感とナッツの甘みを、雑味なく引き出す4投式。前半はしっかり、後半は静かに整える。",
-  "image": "images/tomio.jpg",
-  "featured": true,
-  "points": [
-    { "time": 0,   "note": "40ml注いで40秒蒸らし（粉全体を均一に濡らす）" },
-    { "time": 40,  "note": "60mlを中心→小さな円で注ぐ（合計100ml）" },
-    { "time": 80,  "note": "80mlを一定の細さで注ぐ（合計180ml）" },
-    { "time": 120, "note": "90mlを静かに注いで甘みを閉じ込める（合計270ml）" },
-    { "time": 160, "note": "抽出終了。液が落ちきる直前で外す（雑味カット）" }
-  ]
-},
+  {
+    "id": "tomio",
+    "name": "ブラジル トミオ・フクダDOT（Dry On Tree）",
+    "dose": 18,
+    "totalWater": 280,
+    "targetTime": "2:40",
+    "initialTemperature": 88,
+    "notes": "DOTの蜜感とナッツの甘みを、雑味なく引き出す4投式。前半はしっかり、後半は静かに整える。",
+    "image": "images/tomio.jpg",
+    "featured": true,
+    "points": [
+      { "time": 0,   "note": "40ml注いで40秒蒸らし（粉全体を均一に濡らす）" },
+      { "time": 40,  "note": "60mlを中心→小さな円で注ぐ（合計100ml）" },
+      { "time": 80,  "note": "80mlを一定の細さで注ぐ（合計180ml）" },
+      { "time": 120, "note": "90mlを静かに注いで甘みを閉じ込める（合計270ml）" },
+      { "time": 160, "note": "抽出終了。液が落ちきる直前で外す（雑味カット）" }
+    ]
+  },
   {
     "id": "pakamara",
     "name": "【蜜感】パカマラ ナチュラル",
+    "dose": 16,
+    "totalWater": 260,
+    "targetTime": "2:45",
     "initialTemperature": 89,
     "notes": "完熟フルーツの甘みを引き出す4投式。",
     "points": [
@@ -30,6 +36,9 @@
   {
     "id": "mandheling",
     "name": "マンデリン シナール - 重厚なる大地の余韻 -",
+    "dose": 19,
+    "totalWater": 250,
+    "targetTime": "2:40",
     "initialTemperature": 86,
     "notes": "マンデリン特有のハーブのような香りと力強いボディを、低温抽出で雑味を封じ込めつつ引き出します。重厚感を重視した設計です。",
     "points": [
@@ -43,6 +52,9 @@
   {
     "id": "brazil-sakura",
     "name": "ブラジル さくらブルボン - 春の陽光とナッツの甘み -",
+    "dose": 17,
+    "totalWater": 270,
+    "targetTime": "2:35",
     "initialTemperature": 90,
     "notes": "ブルボン種らしい華やかな香りと、柔らかな酸味を活かすため、やや高めの温度で開始。後半にかけて温度を下げて甘みを閉じ込めます。",
     "points": [
@@ -56,6 +68,9 @@
   {
     "id": "guatemala-decaf",
     "name": "グァテマラ カフェインレス - 優しさと力強さの共存 -",
+    "dose": 17,
+    "totalWater": 270,
+    "targetTime": "2:55",
     "initialTemperature": 88,
     "notes": "カフェインレス特有の物足りなさを払拭するため、前半にしっかり成分を抜き出し、マイルドで甘い後味を構築します。",
     "points": [
@@ -69,6 +84,9 @@
   {
     "id": "kenya-masai",
     "name": "ケニア マサイ - 完熟ベリーの力強い甘み -",
+    "dose": 17,
+    "totalWater": 290,
+    "targetTime": "2:50",
     "initialTemperature": 88,
     "notes": "ケニアらしい圧倒的なボディ感と、カシスやベリーを思わせる濃厚な甘みを引き出すレシピ。酸味を角のない『果実の芳醇さ』として整え、重厚な余韻を構築します。",
     "points": [
