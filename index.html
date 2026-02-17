@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-512.png">
-  
+
 <style>
 :root{
   --bg:#f6f4f1;
@@ -33,7 +33,7 @@ body{
   max-width: 340px;
   display:block;
   margin: 0 auto 6px;
-}  
+}
 .header{ margin:6px 0 14px; }
 .brand{ font-size:22px; font-weight:900; letter-spacing:0.02em; }
 .tagline{ margin-top:4px; color:var(--muted); font-size:13px; }
@@ -120,17 +120,18 @@ select{
   background:#fff;
 }
 
-/* ★追加：豆写真 */
+/* ★豆写真（比率固定） */
 .beanPhoto{
   width:100%;
   border-radius:12px;
   margin-bottom:10px;
   display:block;
   border:1px solid rgba(0,0,0,0.06);
-  aspect-ratio: 16/9;   /* ←追加 */
-  object-fit: cover;    /* ←追加 */
+  aspect-ratio: 16/9;
+  object-fit: cover;
 }
 
+/* ★メタ（2段：ピル＋本文） */
 .meta{
   margin-top:10px;
   padding:10px 12px;
@@ -140,23 +141,32 @@ select{
   color:var(--muted);
   font-size:13px;
 }
-.metaTemp{
-  display:inline-block;
+.metaPills{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:10px;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
   padding:6px 10px;
   border-radius:999px;
   font-size:13px;
   font-weight:700;
   background:rgba(122,90,42,0.10);
   border:1px solid rgba(122,90,42,0.25);
-  margin-bottom:8px;
 }
-
+.pill span{
+  font-weight:900;
+  color:var(--text);
+}
 .metaNote{
   font-size:14px;
   line-height:1.6;
   color:var(--text);
 }
-.meta b{ color:var(--text); }
 
 table{ width:100%; border-collapse:collapse; }
 td{
@@ -194,8 +204,9 @@ tr.upcoming{ background:rgba(232,243,255,0.65); }
 <body>
 
 <div class="header">
- <div class="brand">
-  <img src="logo.png" alt="観音珈琲 慈" class="logo"></div>
+  <div class="brand">
+    <img src="logo.png" alt="観音珈琲 慈" class="logo">
+  </div>
   <div class="tagline">抽出ナビ｜観音珈琲公式レシピ</div>
 </div>
 
@@ -377,34 +388,79 @@ function renderFeaturedBadge(){
   }
 }
 
-function renderMeta(){
-  const t = Number(current?.initialTemperature);
-  const temp = Number.isFinite(t) ? `${t}℃` : "—";
+/* ★追加：ポイント内の「合計xxxml」と totalWater の整合チェック（開発者向け） */
+function validateRecipeWater(r){
+  const total = Number(r?.totalWater);
+  if(!Number.isFinite(total) || total <= 0) return;
 
-  const dose = Number(current?.dose);
-  const doseText = Number.isFinite(dose) ? `${dose}g` : "—";
+  // note から「合計123ml」を抽出して最大値（最終合計）を拾う
+  const pts = r?.points || [];
+  let maxCum = null;
+  for(const p of pts){
+    const note = safeText(p?.note);
+    const matches = note.match(/合計\s*([0-9]+)\s*ml/gi);
+    if(!matches) continue;
 
-  const water = Number(current?.totalWater);
-  const waterText = Number.isFinite(water) ? `${water}ml` : "—";
+    for(const m of matches){
+      const num = Number((m.match(/([0-9]+)/) || [])[1]);
+      if(Number.isFinite(num)){
+        maxCum = (maxCum === null) ? num : Math.max(maxCum, num);
+      }
+    }
+  }
 
-  const target = safeText(current?.targetTime) || "—";
-  const notes = safeText(current?.notes);
+  // 合計表記が無いレシピはスルー
+  if(maxCum === null) return;
 
-  document.getElementById("meta").innerHTML = `
-    <div class="metaTemp">湯温 ${temp}　｜　豆 ${doseText}　｜　湯量 ${waterText}　｜　目標 ${target}</div>
-    <div class="metaNote">${notes ? notes : "（メモなし）"}</div>
-  `;
-
-  // 豆写真（recipes.json の image を直接使う）
-  const img = document.getElementById("beanPhoto");
-  if(img && current?.image){
-    img.src = encodeURI(current.image);
-    img.style.display = "block";
-  }else if(img){
-    img.style.display = "none";
+  if(maxCum !== total){
+    console.warn(
+      `[recipes.json] 水量不一致: id=${r.id} totalWater=${total} / note最終合計=${maxCum} (ml). ` +
+      `points の「合計○ml」か totalWater を揃えてください。`
+    );
   }
 }
 
+function renderMeta(){
+  const dose = Number(current?.dose);
+  const water = Number(current?.totalWater);
+  const tempN = Number(current?.initialTemperature);
+  const targetTime = safeText(current?.targetTime);
+  const grind = safeText(current?.grind);
+  const notes = safeText(current?.notes);
+
+  const temp = Number.isFinite(tempN) ? `${tempN}℃` : "—";
+  const doseText = Number.isFinite(dose) ? `${dose}g` : "—";
+  const waterText = Number.isFinite(water) ? `${water}ml` : "—";
+
+  let ratioText = "—";
+  if(Number.isFinite(dose) && dose > 0 && Number.isFinite(water)){
+    ratioText = `1:${(water/dose).toFixed(1)}`;
+  }
+
+  document.getElementById("meta").innerHTML = `
+    <div class="metaPills">
+      <div class="pill">豆 <span>${doseText}</span></div>
+      <div class="pill">湯量 <span>${waterText}</span></div>
+      <div class="pill">比率 <span>${ratioText}</span></div>
+      <div class="pill">目標 <span>${targetTime || "—"}</span></div>
+      <div class="pill">挽き目 <span>${grind || "—"}</span></div>
+      <div class="pill">湯温 <span>${temp}</span></div>
+    </div>
+    <div class="metaNote">${notes ? notes : "（メモなし）"}</div>
+  `;
+
+  // 豆写真（既存の動作維持）
+  const img = document.getElementById("beanPhoto");
+  if(current?.image){
+    img.src = encodeURI(current.image);
+    img.style.display = "block";
+  }else{
+    img.style.display = "none";
+  }
+
+  // 開発者向け：水量チェック（console.warn）
+  validateRecipeWater(current);
+}
 
 function renderEvents(){
   const tbody = document.getElementById("events");
@@ -425,6 +481,9 @@ function loadRecipes(){
     .then(data => {
       data.sort((a,b)=> (b.featured===true) - (a.featured===true));
       recipes = data;
+
+      // まとめて水量整合チェック（開発者向け）
+      recipes.forEach(validateRecipeWater);
 
       const sel = document.getElementById("recipeSelect");
       sel.innerHTML = "";
